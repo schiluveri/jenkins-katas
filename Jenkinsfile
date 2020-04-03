@@ -28,6 +28,9 @@ pipeline {
             }
 
           }
+          options {
+            skipDefaultCheckout(true)
+          }
           steps {
             unstash 'code'
             skipDefaultCheckout true
