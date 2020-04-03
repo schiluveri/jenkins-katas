@@ -1,15 +1,9 @@
 pipeline {
   agent any
   stages {
-    stage('clone down') {
-      agent {
-        node {
-          label 'host'
-        }
-
-      }
+    stage('Clone down') {
       steps {
-        stash(name: 'code', excludes: '.git')
+        stash(excludes: '.git', name: 'code')
       }
     }
 
@@ -17,7 +11,7 @@ pipeline {
       parallel {
         stage('Say Hello') {
           steps {
-            sh 'echo "Hello World"'
+            sh 'echo "hello world"'
           }
         }
 
@@ -29,25 +23,40 @@ pipeline {
 
           }
           options {
-            skipDefaultCheckout(true)
+            skipDefaultCheckout()
           }
           steps {
             unstash 'code'
-            skipDefaultCheckout true
             sh 'ci/build-app.sh'
             archiveArtifacts 'app/build/libs/'
           }
         }
 
         stage('test app') {
+          agent {
+            docker {
+              image 'gradle:jdk11'
+            }
+
+          }
+          options {
+            skipDefaultCheckout()
+          }
           steps {
+            unstash 'code'
             sh 'ci/unit-test-app.sh'
-            sh 'junit \'app/build/test-results/test/TEST-*.xml\''
+            junit 'app/build/test-results/test/TEST-*.xml'
           }
         }
 
       }
     }
+
+    post {
+        always {
+
+            deleteDir() /* clean up our workspace */
+        }
 
   }
 }
